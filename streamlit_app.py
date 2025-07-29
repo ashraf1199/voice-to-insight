@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import os
 import numpy as np
 import wave
@@ -7,7 +8,49 @@ from summarize import summarize_with_huggingface
 #from streamlit_webrtc import webrtc_streamer, AudioProcessorBase
 #import av
 import uuid
-from st_audiorec import st_audiorec
+#from st_audiorec import st_audiorec
+
+def record_audio_ui():
+    # Streamlit-compatible audio recorder using HTML5 + JS
+    components.html("""
+        <html>
+        <body>
+            <h4>🎙 Press to Record, Stop, and Save</h4>
+            <audio id="player" controls></audio>
+            <br>
+            <button onclick="startRecording()">Start Recording</button>
+            <button onclick="stopRecording()">Stop Recording</button>
+            <script>
+                let chunks = [];
+                let mediaRecorder;
+
+                function startRecording() {
+                    navigator.mediaDevices.getUserMedia({ audio: true })
+                    .then(stream => {
+                        mediaRecorder = new MediaRecorder(stream);
+                        mediaRecorder.start();
+                        chunks = [];
+                        mediaRecorder.ondataavailable = e => chunks.push(e.data);
+                        mediaRecorder.onstop = e => {
+                            const blob = new Blob(chunks, { type: 'audio/wav' });
+                            const url = URL.createObjectURL(blob);
+                            document.getElementById('player').src = url;
+
+                            fetch('/upload', {
+                                method: 'POST',
+                                body: blob
+                            });
+                        };
+                    });
+                }
+
+                function stopRecording() {
+                    mediaRecorder.stop();
+                }
+            </script>
+        </body>
+        </html>
+    """, height=300)
 
 
 st.set_page_config(page_title="🎙️ Voice-to-Insight", layout="centered")
@@ -69,8 +112,8 @@ if input_mode == "Upload Audio File":
 
 elif input_mode == "Record from Microphone":
     st.info("🎙 Click the mic below to record your voice")
-
-    wav_audio_data = st_audiorec()
+    
+    wav_audio_data = record_audio_ui()#= st_audiorec()
 
     if wav_audio_data is not None:
         audio_path = os.path.join(UPLOAD_DIR, "mic_recorded.wav")
