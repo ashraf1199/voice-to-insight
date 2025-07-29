@@ -41,7 +41,7 @@ elif input_mode == "Record from Microphone":
             return frame
     unique_key = str(uuid.uuid4())
     ctx = webrtc_streamer(
-        key="unique_key",
+        key=unique_key,
         mode="sendonly",
         audio_receiver_size=1024,
         media_stream_constraints={"audio": True, "video": False},
