@@ -4,9 +4,11 @@ import numpy as np
 import wave
 from transcribe import transcribe_audio
 from summarize import summarize_with_huggingface
-from streamlit_webrtc import webrtc_streamer, AudioProcessorBase
-import av
+#from streamlit_webrtc import webrtc_streamer, AudioProcessorBase
+#import av
 import uuid
+from st_audiorec import st_audiorec
+
 
 st.set_page_config(page_title="🎙️ Voice-to-Insight", layout="centered")
 st.title("🎙️ Voice-to-Insight: Real-Time Meeting Summarizer")
@@ -30,40 +32,53 @@ if input_mode == "Upload Audio File":
         st.success("✅ Audio file uploaded successfully!")
 
 # ===== Microphone Section =====
+# elif input_mode == "Record from Microphone":
+#     class AudioProcessor(AudioProcessorBase):
+#         def __init__(self):
+#             self.frames = []
+
+#         def recv(self, frame: av.AudioFrame) -> av.AudioFrame:
+#             data = frame.to_ndarray()
+#             self.frames.append(data)
+#             return frame
+
+#     audio_processor_factory = AudioProcessor
+
+#     ctx = webrtc_streamer(
+#         key="mic-stream",
+#         mode="sendonly",
+#         audio_receiver_size=1024,
+#         media_stream_constraints={"audio": True, "video": False},
+#         rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
+#         async_processing=True,
+#         audio_processor_factory=audio_processor_factory,  # ✅ REQUIRED to avoid .name error
+#     )
+
+
+#     if ctx.state.playing and ctx.audio_processor:
+#         if st.button("Save Recording"):
+#             audio_data = np.concatenate(ctx.audio_processor.frames, axis=1).flatten().astype(np.int16)
+#             audio_path = os.path.join(UPLOAD_DIR, "mic_recording.wav")
+#             with wave.open(audio_path, "wb") as wf:
+#                 wf.setnchannels(1)
+#                 wf.setsampwidth(2)
+#                 wf.setframerate(48000)
+#                 wf.writeframes(audio_data.tobytes())
+#             st.audio(audio_path)
+#             st.success("✅ Recording saved successfully!")
+
 elif input_mode == "Record from Microphone":
-    class AudioProcessor(AudioProcessorBase):
-        def __init__(self):
-            self.frames = []
+    st.info("🎙 Click the mic below to record your voice")
 
-        def recv(self, frame: av.AudioFrame) -> av.AudioFrame:
-            data = frame.to_ndarray()
-            self.frames.append(data)
-            return frame
+    wav_audio_data = st_audiorec()
 
-    audio_processor_factory = AudioProcessor
+    if wav_audio_data is not None:
+        audio_path = os.path.join(UPLOAD_DIR, "mic_recorded.wav")
+        with open(audio_path, "wb") as f:
+            f.write(wav_audio_data)
 
-    ctx = webrtc_streamer(
-        key="mic-stream",
-        mode="sendonly",
-        audio_receiver_size=1024,
-        media_stream_constraints={"audio": True, "video": False},
-        rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
-        async_processing=True,
-        audio_processor_factory=audio_processor_factory,  # ✅ REQUIRED to avoid .name error
-    )
-
-
-    if ctx.state.playing and ctx.audio_processor:
-        if st.button("Save Recording"):
-            audio_data = np.concatenate(ctx.audio_processor.frames, axis=1).flatten().astype(np.int16)
-            audio_path = os.path.join(UPLOAD_DIR, "mic_recording.wav")
-            with wave.open(audio_path, "wb") as wf:
-                wf.setnchannels(1)
-                wf.setsampwidth(2)
-                wf.setframerate(48000)
-                wf.writeframes(audio_data.tobytes())
-            st.audio(audio_path)
-            st.success("✅ Recording saved successfully!")
+        st.audio(audio_path)
+        st.success("✅ Recording saved successfully!")
 
 
 # ===== Transcription & Summarization =====
