@@ -79,12 +79,16 @@ if audio_path and os.path.exists(audio_path):
             except Exception as e:
                 st.error(f"Transcription Error: {str(e)}")
         
-        with st.spinner("📌 Summarizing..."):
-            try:
-                summary = summarize_with_huggingface(transcript)
-                st.subheader("📌 Summary")
-                st.write(summary if summary.strip() else "❗ No summary generated.")
-            except Exception as e:
-                st.error(f"Summarization Error: {str(e)}")
+        if transcript:
+            with st.spinner("📌 Summarizing..."):
+                try:
+                    summary = summarize_with_huggingface(transcript)
+                    st.subheader("📌 Summary")
+                    st.write(summary if summary.strip() else "❗ No summary generated.")
+                except Exception as e:
+                    st.error(f"Summarization Error: {str(e)}")
+        else:
+            st.warning("🛑 Skipping summarization due to transcription failure.")
+
 else:
     st.info("Please upload or record audio to get started.")
