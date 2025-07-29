@@ -39,32 +39,32 @@ elif input_mode == "Record from Microphone":
             data = frame.to_ndarray()
             self.frames.append(data)
             return frame
-    unique_key = str(uuid.uuid4())
+
+    audio_processor_factory = AudioProcessor
+
     ctx = webrtc_streamer(
-        key=unique_key,
+        key="mic-stream",
         mode="sendonly",
         audio_receiver_size=1024,
         media_stream_constraints={"audio": True, "video": False},
         rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
         async_processing=True,
+        audio_processor_factory=audio_processor_factory,  # ✅ REQUIRED to avoid .name error
     )
 
-    if ctx.audio_receiver:
-        st.warning("🎙️ Recording... press the 'Stop' button above when you're done.")
+
+    if ctx.state.playing and ctx.audio_processor:
         if st.button("Save Recording"):
-            audio_processor = ctx.audio_processor
-            if not audio_processor or not audio_processor.frames:
-                st.error("No audio frames recorded.")
-            else:
-                audio_data = np.concatenate(audio_processor.frames, axis=1).flatten().astype(np.int16)
-                audio_path = os.path.join(UPLOAD_DIR, "mic_recording.wav")
-                with wave.open(audio_path, "wb") as wf:
-                    wf.setnchannels(1)
-                    wf.setsampwidth(2)
-                    wf.setframerate(48000)
-                    wf.writeframes(audio_data.tobytes())
-                st.audio(audio_path)
-                st.success("✅ Recording saved successfully!")
+            audio_data = np.concatenate(ctx.audio_processor.frames, axis=1).flatten().astype(np.int16)
+            audio_path = os.path.join(UPLOAD_DIR, "mic_recording.wav")
+            with wave.open(audio_path, "wb") as wf:
+                wf.setnchannels(1)
+                wf.setsampwidth(2)
+                wf.setframerate(48000)
+                wf.writeframes(audio_data.tobytes())
+            st.audio(audio_path)
+            st.success("✅ Recording saved successfully!")
+
 
 # ===== Transcription & Summarization =====
 if audio_path and os.path.exists(audio_path):
