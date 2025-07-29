@@ -6,6 +6,7 @@ from transcribe import transcribe_audio
 from summarize import summarize_with_huggingface
 from streamlit_webrtc import webrtc_streamer, AudioProcessorBase
 import av
+import uuid
 
 st.set_page_config(page_title="🎙️ Voice-to-Insight", layout="centered")
 st.title("🎙️ Voice-to-Insight: Real-Time Meeting Summarizer")
@@ -38,9 +39,9 @@ elif input_mode == "Record from Microphone":
             data = frame.to_ndarray()
             self.frames.append(data)
             return frame
-
+    unique_key = str(uuid.uuid4())
     ctx = webrtc_streamer(
-        key="speech",
+        key="unique_key",
         mode="sendonly",
         audio_receiver_size=1024,
         media_stream_constraints={"audio": True, "video": False},
