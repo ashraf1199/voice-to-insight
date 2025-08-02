@@ -6,6 +6,6 @@ torchaudio
 git+https://github.com/openai/whisper.git
 numpy
 av
-
+streamlit-audio-recorder
 # openai
 # google-cloud-aiplatform
